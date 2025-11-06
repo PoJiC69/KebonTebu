@@ -1,0 +1,19 @@
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  token_id TEXT PRIMARY KEY,
+  username TEXT NOT NULL,
+  expires_at DATETIME NOT NULL,
+  revoked INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  token TEXT PRIMARY KEY,
+  username TEXT NOT NULL,
+  expires_at DATETIME NOT NULL,
+  used INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
+);

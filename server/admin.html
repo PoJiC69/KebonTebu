@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>KEBONTEBU Admin — Rounds</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background:#0b1220; color:#e6eef8; }
+    .box { background:#111428; padding:16px; border-radius:8px; margin-bottom:12px; }
+    input { padding:8px; width:300px; }
+    button { padding:8px 12px; margin-left:8px; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th,td { border:1px solid #222; padding:8px; text-align:left; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>KEBONTEBU Admin — Rounds Export</h2>
+    <div>
+      <label>Admin token: <input id="admintoken" type="text" placeholder="Enter admin token" /></label>
+      <button id="btnList">List Rounds (JSON)</button>
+      <button id="btnCSV">Download CSV</button>
+    </div>
+    <div id="status" style="margin-top:8px"></div>
+  </div>
+
+  <div id="list"></div>
+
+  <script>
+    const base = location.origin;
+    document.getElementById('btnList').onclick = async () => {
+      const token = document.getElementById('admintoken').value.trim();
+      if (!token) return alert('enter admin token');
+      document.getElementById('status').innerText = 'Loading...';
+      try {
+        const res = await fetch(base + '/admin/rounds', { headers: { 'x-admin-token': token }});
+        if (!res.ok) { document.getElementById('status').innerText = 'Error: ' + res.status; return; }
+        const data = await res.json();
+        document.getElementById('status').innerText = `Loaded ${data.length} rounds`;
+        renderList(data);
+      } catch (e) {
+        document.getElementById('status').innerText = 'Fetch error';
+      }
+    };
+
+    document.getElementById('btnCSV').onclick = () => {
+      const token = document.getElementById('admintoken').value.trim();
+      if (!token) return alert('enter admin token');
+      const url = '/admin/rounds?format=csv';
+      // force download
+      const a = document.createElement('a');
+      a.href = url;
+      a.setAttribute('data-token', token);
+      // use fetch to get CSV with token, then download blob
+      fetch(url, { headers: { 'x-admin-token': token }})
+        .then(r => r.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = 'rounds.csv';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        }).catch(e => alert('CSV fetch failed'));
+    };
+
+    function renderList(data) {
+      const container = document.getElementById('list');
+      container.innerHTML = '';
+      if (!data || !data.length) { container.innerHTML = '<div class="box">No rounds</div>'; return; }
+      const t = document.createElement('table');
+      t.innerHTML = `<thead><tr><th>ID</th><th>Room</th><th>Game</th><th>Winners</th><th>Payouts</th><th>Seed</th><th>Time</th></tr></thead>`;
+      const tbody = document.createElement('tbody');
+      for (const r of data) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.id}</td><td>${r.room_id}</td><td>${r.game_type}</td><td>${JSON.stringify(r.winners)}</td><td>${JSON.stringify(r.payouts)}</td><td>${r.seed}</td><td>${r.created_at}</td>`;
+        tbody.appendChild(tr);
+      }
+      t.appendChild(tbody);
+      container.appendChild(t);
+    }
+  </script>
+</body>
+</html>

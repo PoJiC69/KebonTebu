@@ -1,0 +1,13 @@
+// usage snippet (merge into start_game_* handler before shuffle)
+const commitReveal = require('./utils/commit_reveal');
+const SERVER_HMAC_SECRET = process.env.SERVER_HMAC_SECRET || 'change-me';
+
+// generate seed and commit
+const seed = crypto.randomBytes(16).toString('hex');
+const commit = commitReveal.hmacCommit(seed, SERVER_HMAC_SECRET);
+
+// persist commit (optionally in game_rounds.commit column or separate table) and emit commit to room before dealing
+await runAsync(`INSERT INTO game_rounds(id, room_id, game_type, seed, deals, evaluations, winners, bets_snapshot) VALUES(?, ?, ?, ?, ?, ?, ?, ?)`, [roundId, roomId, 'poker', seed, '[]','{}','[]','{}']);
+// Better: store commit in DB and set seed after commit is revealed (or store both, but only reveal seed after round)
+// Emit commit (so clients can verify later)
+io.to(roomId).emit('round_commit', { roundId, commit });

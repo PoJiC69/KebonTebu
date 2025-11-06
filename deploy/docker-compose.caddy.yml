@@ -1,0 +1,52 @@
+version: '3.8'
+services:
+  server:
+    build:
+      context: ../server
+    container_name: kebontebu_server
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - SERVER_HMAC_SECRET=${SERVER_HMAC_SECRET}
+      - ACCESS_TTL_SECONDS=${ACCESS_TTL_SECONDS:-300}
+      - REFRESH_TTL_DAYS=${REFRESH_TTL_DAYS:-30}
+      - RATE_WINDOW_MS=${RATE_WINDOW_MS:-900000}
+      - RATE_MAX=${RATE_MAX:-200}
+      - BODY_LIMIT=${BODY_LIMIT:-100kb}
+      - ROOM_IDLE_TIMEOUT_MS=${ROOM_IDLE_TIMEOUT_MS:-300000} # 5 min default
+      - REFUND_CHECK_INTERVAL_MS=${REFUND_CHECK_INTERVAL_MS:-60000} # run every 60s
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
+    volumes:
+      - ../server/data:/app/data
+      - ../server:/app
+    expose:
+      - "3000"
+    networks:
+      - web
+
+  caddy:
+    image: caddy:2
+    container_name: kebontebu_caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - server
+    environment:
+      - ACME_AGREE=true
+      - EMAIL_FOR_LETSENCRYPT=${EMAIL_FOR_LETSENCRYPT}
+    networks:
+      - web
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  web:
+    external: false

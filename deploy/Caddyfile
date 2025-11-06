@@ -1,0 +1,9 @@
+your.domain.tld {
+  reverse_proxy server:3000
+  encode gzip
+  tls {env:EMAIL_FOR_LETSENCRYPT}
+  header {
+    # security headers
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  }
+}
